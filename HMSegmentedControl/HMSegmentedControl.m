@@ -715,10 +715,13 @@
             sectionsCount = [self.sectionTitles count];
         }
         
-        if (segment != self.selectedSegmentIndex && segment < sectionsCount) {
-            // Check if we have to do anything with the touch event
-            if (self.isTouchEnabled)
+        // Check if we have to do anything with the touch event
+        if (segment < sectionsCount && self.isTouchEnabled) {
+            if (segment != self.selectedSegmentIndex) {
                 [self setSelectedSegmentIndex:segment animated:self.shouldAnimateUserSelection notify:YES];
+            } else {
+                [self notifyForSegmentUnchanged];
+            }
         }
     }
 }
@@ -846,6 +849,12 @@
             if (notify)
                 [self notifyForSegmentChangeToIndex:index];
         }
+    }
+}
+
+-(void)notifyForSegmentUnchanged {
+    if (self.superview) {
+        [self sendActionsForControlEvents:UIControlEventTouchUpInside];
     }
 }
 
