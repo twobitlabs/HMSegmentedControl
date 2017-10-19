@@ -579,6 +579,13 @@
 }
 
 - (CGRect)frameForSelectionIndicator {
+    return [self frameForSelectionIndicatorAtIndex:self.selectedSegmentIndex];
+}
+
+// The index parameter is only used when self.segmentWidthStyle is HMSegmentedControlSegmentWidthStyleFixed and
+// self.selectionStyle is HMSegmentedControlSelectionStyleFullWidthStripe or HMSegmentedControlSelectionStyleBox;
+// otherwise, self.selectedSegmentedIndex is used for calculations.
+- (CGRect)frameForSelectionIndicatorAtIndex:(CGFloat)index {
     CGFloat indicatorYOffset = 0.0f;
     
     if (self.selectionIndicatorLocation == HMSegmentedControlSelectionIndicatorLocationDown) {
@@ -634,12 +641,18 @@
                 return CGRectMake(selectedSegmentOffset + self.selectionIndicatorEdgeInsets.left, indicatorYOffset, [[self.segmentWidthsArray objectAtIndex:self.selectedSegmentIndex] floatValue] - self.selectionIndicatorEdgeInsets.right, self.selectionIndicatorHeight + self.selectionIndicatorEdgeInsets.bottom);
             }
             
-            return CGRectMake((self.segmentWidth + self.selectionIndicatorEdgeInsets.left) * self.selectedSegmentIndex, indicatorYOffset, self.segmentWidth - self.selectionIndicatorEdgeInsets.right, self.selectionIndicatorHeight);
+            return CGRectMake((self.segmentWidth + self.selectionIndicatorEdgeInsets.left) * index, indicatorYOffset, self.segmentWidth - self.selectionIndicatorEdgeInsets.right, self.selectionIndicatorHeight);
         }
     }
 }
 
 - (CGRect)frameForFillerSelectionIndicator {
+    return [self frameForFillerSelectionIndicatorAtIndex:self.selectedSegmentIndex];
+}
+
+// The index parameter is only used when self.segmentWidthStyle is HMSegmentedControlSegmentWidthStyleFixed;
+// otherwise, self.selectedSegmentedIndex is used for calculations.
+- (CGRect)frameForFillerSelectionIndicatorAtIndex:(CGFloat)index {
     if (self.segmentWidthStyle == HMSegmentedControlSegmentWidthStyleDynamic) {
         CGFloat selectedSegmentOffset = 0.0f;
         
@@ -655,7 +668,7 @@
         
         return CGRectMake(selectedSegmentOffset, 0, [[self.segmentWidthsArray objectAtIndex:self.selectedSegmentIndex] floatValue], CGRectGetHeight(self.frame));
     }
-    return CGRectMake(self.segmentWidth * self.selectedSegmentIndex, 0, self.segmentWidth, CGRectGetHeight(self.frame));
+    return CGRectMake(self.segmentWidth * index, 0, self.segmentWidth, CGRectGetHeight(self.frame));
 }
 
 - (void)updateSegmentsRects {
@@ -926,6 +939,34 @@
     
     if (self.indexChangeBlock)
         self.indexChangeBlock(index);
+}
+
+#pragma mark - Selection Indicator Intermediate Positioning
+
+// Update the selection indicator to an intermediate position between the final positions at each whole number index.
+// This is useful if a horizontal scroll view is used to show content associated with the segmented control;
+// this can be called from UIScrollViewDelegate's scrollViewDidScroll: to keep the selection indicator's
+// position in sync with the associated scroll view's content offset.
+//
+// The selection indicator is updated only when self.isUserDraggable is false
+// (to prevent confusion from having both the segmented control and content separately scrollable),
+// self.segmentWidthStyle is HMSegmentedControlSegmentWidthStyleFixed, and
+// self.selectionStyle is HMSegmentedControlSelectionStyleFullWidthStripe or HMSegmentedControlSelectionStyleBox.
+- (void)updateSelectionIndicatorForIndex:(CGFloat)index {
+    if (self.isUserDraggable ||
+        self.segmentWidthStyle != HMSegmentedControlSegmentWidthStyleFixed ||
+        (self.selectionStyle != HMSegmentedControlSelectionStyleFullWidthStripe && self.selectionStyle != HMSegmentedControlSelectionStyleBox)) {
+        return;
+    }
+
+    // Disable CALayer animations
+    NSMutableDictionary *newActions = [[NSMutableDictionary alloc] initWithObjectsAndKeys:[NSNull null], @"position", [NSNull null], @"bounds", nil];
+
+    self.selectionIndicatorStripLayer.actions = newActions;
+    self.selectionIndicatorStripLayer.frame = [self frameForSelectionIndicatorAtIndex:index];
+
+    self.selectionIndicatorBoxLayer.actions = newActions;
+    self.selectionIndicatorBoxLayer.frame = [self frameForFillerSelectionIndicatorAtIndex:index];
 }
 
 #pragma mark - Styling Support
