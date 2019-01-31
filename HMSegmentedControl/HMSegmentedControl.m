@@ -121,7 +121,7 @@
 }
 
 - (void)dealloc {
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIAccessibilityVoiceOverStatusChanged object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIAccessibilityVoiceOverStatusDidChangeNotification object:nil];
 }
 
 - (void)awakeFromNib {
@@ -169,7 +169,7 @@
     
     self.contentMode = UIViewContentModeRedraw;
 
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(voiceOverStatusChanged:) name:UIAccessibilityVoiceOverStatusChanged object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(voiceOverStatusChanged:) name:UIAccessibilityVoiceOverStatusDidChangeNotification object:nil];
 }
 
 - (void)layoutSubviews {
